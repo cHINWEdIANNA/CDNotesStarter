@@ -1,21 +1,83 @@
-import { SafeAreaView, Text } from 'react-native';
+import React, { useState } from 'react';
+import { SafeAreaView, Text, TextInput, Button, FlatList, View, TouchableOpacity, StyleSheet } from 'react-native';
 import tw, { useDeviceContext } from 'twrnc';
-import { Provider } from 'react-redux';
-import { store } from './store';
-import 'react-native-reanimated'; 
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { store, addEntry, deleteEntry } from './store';
 
-function App() {
+function Journal() {
   useDeviceContext(tw);
+  const [text, setText] = useState('');
+  const dispatch = useDispatch();
+  const journalEntries = useSelector(state => state.journal.entries);
+
+  const handleAddEntry = () => {
+    if (text.trim()) {
+      dispatch(addEntry({ id: Date.now(), text }));
+      setText('');
+    }
+  };
+
+  const handleDeleteEntry = (id) => {
+    dispatch(deleteEntry(id));
+  };
 
   return (
-    <Provider store={store}>
-      <SafeAreaView>
-        <Text style={tw`w-screen mt-16 text-center text-xl`}>
-          Your app code goes here.
-        </Text>
-      </SafeAreaView>
-    </Provider>
-  )
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.header}>My Journal App</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Write your journal entry here..."
+        value={text}
+        onChangeText={setText}
+      />
+      <Button title="Add Entry" onPress={handleAddEntry} />
+      <FlatList
+        data={journalEntries}
+        keyExtractor={item => item.id.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.entry}>
+            <Text>{item.text}</Text>
+            <TouchableOpacity onPress={() => handleDeleteEntry(item.id)}>
+              <Text style={styles.delete}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      />
+    </SafeAreaView>
+  );
 }
 
-export default App;
+export default function App() {
+  return (
+    <Provider store={store}>
+      <Journal />
+    </Provider>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 16
+  },
+  input: {
+    borderWidth: 1,
+    padding: 8,
+    marginBottom: 16
+  },
+  entry: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 8,
+    borderBottomWidth: 1
+  },
+  delete: {
+    color: 'red'
+  }
+});
