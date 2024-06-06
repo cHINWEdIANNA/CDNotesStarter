@@ -1,19 +1,32 @@
-import { configureStore } from '@reduxjs/toolkit'
-// Or from '@reduxjs/toolkit/query/react'
-import { setupListeners } from '@reduxjs/toolkit/query'
-import { dbApi } from './db'
+import { configureStore, createSlice } from '@reduxjs/toolkit';
+import { setupListeners } from '@reduxjs/toolkit/query';
+import { dbApi } from './db';
+
+// Create a journal slice within the same file
+const journalSlice = createSlice({
+  name: 'journal',
+  initialState: {
+    entries: [],
+  },
+  reducers: {
+    addEntry: (state, action) => {
+      state.entries.push(action.payload);
+    },
+    deleteEntry: (state, action) => {
+      state.entries = state.entries.filter(entry => entry.id !== action.payload);
+    },
+  },
+});
+
+export const { addEntry, deleteEntry } = journalSlice.actions;
 
 export const store = configureStore({
   reducer: {
-    // Add the generated reducer as a specific top-level slice
     [dbApi.reducerPath]: dbApi.reducer,
+    journal: journalSlice.reducer,
   },
-  // Adding the api middleware enables caching, invalidation, polling,
-  // and other useful features of `rtk-query`.
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(dbApi.middleware),
-})
+});
 
-// optional, but required for refetchOnFocus/refetchOnReconnect behaviors
-// see `setupListeners` docs - takes an optional callback as the 2nd arg for customization
-setupListeners(store.dispatch)
+setupListeners(store.dispatch);
